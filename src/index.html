@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, user-scalable=no"
+		/>
+		<title>Kaler</title>
+
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="application-name" content="Prettier" />
+		<meta name="apple-mobile-web-app-title" content="Prettier" />
+		<meta name="theme-color" content="#1a2b34" />
+		<meta name="msapplication-navbutton-color" content="#1a2b34" />
+		<meta
+			name="apple-mobile-web-app-status-bar-style"
+			content="black-translucent"
+		/>
+		<meta name="msapplication-starturl" content="/" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, shrink-to-fit=no"
+		/>
+
+
+
+		<link rel="stylesheet" href="./main.css" />
+
+		<script></script>
+	</head>
+
+	<body>
+		<header>
+			<a href="/" class="logo-wrapper">
+				<h1>Kaler <span id="version">xyz</span></h1>
+			</a>
+
+			<span class="links">
+			<!--
+				<a
+					class="github-button"
+					href="https://github.com/prettier/prettier"
+					data-show-count="true"
+					aria-label="Star prettier on GitHub"
+				>
+					GitHub
+				</a>
+				-->
+			</span>
+		</header>
+
+		<div id="root" class="playground-container">
+			<div class="editors-container">
+				<div class="options-container open">
+					<div class="options">
+						<details class="sub-options" open="">
+							<summary>General</summary>
+							<label title="Column Delimiter">
+							  Column Delim
+							  <input type="text" value="\t" size="4" />
+              </label>
+              <label title="Row Delimiter">
+							  Row Delim
+							  <input type="text" value="\n" size="4" />
+              </label>
+              <label title="First Line Headers">
+							  <input type="checkbox" />First Line Headers
+              </label>
+              <label title="&quot;NULL&quot; -> NULL">
+							  <input type="checkbox" />"NULL" -> NULL
+              </label>
+              <label title="&quot;EMPTYSTRING&quot; -> &quot;&quot;">
+							  <input type="checkbox" />"EMPTYSTRING" -> &quot;&quot;
+              </label>
+            </details>
+
+            <details class="sub-options" open="">
+							<summary>Output</summary>
+							<label title="Output Type">
+							  Output Type
+							  <select>
+                  <option value="JSON">JSON</option>
+                  <option value="PGInserts">PGI nserts</option>
+                  <option value="PGValues" selected="true">PG Values</option>
+                  <option value="Debug">Debug</option>
+                </select>
+              </label>
+            </details>
+
+
+
+						<div class="sub-options">
+							<button type="button" class="btn">
+								Reset to defaults
+							</button>
+						</div>
+					</div>
+				</div>
+				<div class="editors">
+          <div class="editor input"><textarea id="input-textarea"></textarea></div>
+					<div class="editor input"><textarea id="output-textarea" readonly></textarea></div>
+				</div>
+			</div>
+			<div class="bottom-bar">
+				<div class="bottom-bar-buttons">
+<!--					<button type="button" class="btn">Hide options</button>-->
+					<button type="button" class="btn">Clear</button>
+<!--					<button type="button" class="btn">Copy config JSON</button>-->
+				</div>
+				<div class="bottom-bar-buttons bottom-bar-buttons-right">
+<!--					<button type="button" class="btn">Copy link</button>-->
+<!--					<button type="button" class="btn">Copy markdown</button>-->
+
+<!--						<button type="button" class="btn">Report issue</button>-->
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<script src="main.ts"></script>
+
+		<script async defer src="https://buttons.github.io/buttons.js"></script>
+	</body>
+</html>
