@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"module": "system",
+		"noImplicitAny": true,
+		"strict": true,
+		"noEmit": true,
+		"sourceMap": true,
+      "lib": [
+        "dom",
+        "es2017",
+      ]
+    },
+	"include": ["src/**/*"],
+	"exclude": ["node_modules", "**/*.spec.ts"],
+}

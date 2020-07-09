@@ -1,18 +1,12 @@
-import * as _ from 'lodash';
-import {
-	Page2DState,
-	ParseResult,
-	ParseResultColumn,
-	Page2DOptions,
-} from './types';
+import { IState, ParseResult, ParseResultColumn, IOptions } from './types';
 
-const version:string = "0.1-20200707";
+const version: string = '0.1-20200707';
 
-const page2D: Page2DState = {
+const defaultState: IState = {
 	input: '',
 	acc: {
 		data: [],
-		headers: []
+		headers: [],
 	},
 	output: '',
 	options: {
@@ -21,42 +15,124 @@ const page2D: Page2DState = {
 		convertNull: true,
 		firstLineHeaders: false,
 		convertEmptyString: true,
-		outputType: 'PGInserts'
+		escapeSingleQuotes: true,
+		trimFields: true,
+		ignoreEmptyLines: true,
+		outputType: 'PGValues',
 	},
-	stats: {}
+	stats: {},
 };
 
-(function () {
-	document.getElementById("input-textarea").addEventListener("keyup", function (event) {
-		render()
+(function() {
+	applySettings(defaultState.options);
+
+	document
+		.getElementById('input-textarea')!
+		.addEventListener('keyup', function(event) {
+			render();
+		});
+
+	document.querySelectorAll('.setting-input').forEach(function(element) {
+		element.addEventListener('keyup', render);
 	});
+	document
+		.querySelectorAll('.setting-checkbox, .setting-select')
+		.forEach(function(element) {
+			element.addEventListener('change', render);
+		});
 
-	document.getElementById("version").innerText = version;
+	document
+		.getElementById('reset-settings')!
+		.addEventListener('click', () => applySettings(defaultState.options));
 
+	document.getElementById('version')!.innerText = version;
 })();
 
-function render () {
-	//get all of the option values and the input
-
-	const input: Page2DState = {...page2D, input: (<HTMLTextAreaElement>document.getElementById("input-textarea")).value};
-	const output = doTransform(input);
-	(<HTMLTextAreaElement>document.getElementById("output-textarea")).value = output.output;
+function applySettings(options: IOptions) {
+	(<HTMLInputElement>document.getElementById('column-delimiter')).value =
+		options.columnDelimiter;
+	(<HTMLInputElement>document.getElementById('row-delimiter')).value =
+		options.rowDelimiter;
+	(<HTMLInputElement>document.getElementById('convert-null')).checked =
+		options.convertNull;
+	(<HTMLInputElement>document.getElementById('first-line-headers')).checked =
+		options.firstLineHeaders;
+	(<HTMLInputElement>(
+		document.getElementById('convert-empty-string')
+	)).checked = options.convertEmptyString;
+	(<HTMLInputElement>(
+		document.getElementById('escape-single-quotes')
+	)).checked = options.escapeSingleQuotes;
+	(<HTMLInputElement>document.getElementById('trim-fields')).checked =
+		options.trimFields;
+	(<HTMLInputElement>document.getElementById('ignore-empty-lines')).checked =
+		options.ignoreEmptyLines;
+	(<HTMLSelectElement>document.getElementById('output-type')).value =
+		options.outputType;
 }
 
+function render() {
+	//get all of the option values and the input
 
+	const input: IState = {
+		...defaultState,
+		input: (<HTMLTextAreaElement>document.getElementById('input-textarea'))
+			.value,
+		options: {
+			columnDelimiter: (<HTMLInputElement>(
+				document.getElementById('column-delimiter')
+			)).value,
+			rowDelimiter: (<HTMLInputElement>(
+				document.getElementById('row-delimiter')
+			)).value,
+			convertNull: (<HTMLInputElement>(
+				document.getElementById('convert-null')
+			)).checked,
+			firstLineHeaders: (<HTMLInputElement>(
+				document.getElementById('first-line-headers')
+			)).checked,
+			convertEmptyString: (<HTMLInputElement>(
+				document.getElementById('convert-empty-string')
+			)).checked,
+			escapeSingleQuotes: (<HTMLInputElement>(
+				document.getElementById('escape-single-quotes')
+			)).checked,
+			trimFields: (<HTMLInputElement>(
+				document.getElementById('trim-fields')
+			)).checked,
+			ignoreEmptyLines: (<HTMLInputElement>(
+				document.getElementById('ignore-empty-lines')
+			)).checked,
+			outputType: (<HTMLSelectElement>(
+				document.getElementById('output-type')
+			)).value,
+		},
+	};
 
-function processDelimiter (delim: string): string {
+	const output = doTransform(input);
+	(<HTMLTextAreaElement>document.getElementById('output-textarea')).value =
+		output.output;
+}
+
+function mapObject (input: Object, fn: (value: unknown, key: string) => any) : any [] {
+	return Object.entries(input).map(function ([key, value]) {
+
+		return fn(value, key);
+	});
+}
+
+function processDelimiter(delim: string): string {
 	return delim
 		.replace(/\\r\\n/gm, '\r\n')
 		.replace(/\\n/gm, '\n')
 		.replace(/\\t/gm, '\t');
 }
 
-export function doTransform(input: Page2DState): Page2DState {
+export function doTransform(input: IState): IState {
 	return parse(input);
 }
 
-function parse(input: Page2DState): Page2DState {
+function parse(input: IState): IState {
 	const { ...state } = input;
 	state.acc = parseInput(state.input, state.options);
 	switch (state.options.outputType) {
@@ -82,20 +158,23 @@ function sanitizeColumnName(input: string): string {
 }
 
 export function determineColumnDelimiter(
-	input: String,
-	config: Page2DOptions
+	input: string,
+	config: IOptions
 ): string {
 	//assume that the rowDelimiter is set properly
 	const rows: string[] = input.split(processDelimiter(config.rowDelimiter));
 
 	//look at each row and count the occurrance of expected possible delimiters
 	const expectedPossibleDelimiters = [`,`, `\t`];
-	const counts = {};
+	const counts: Map<string, number> = new Map();
 
 	for (const row of rows) {
 		for (const delim of expectedPossibleDelimiters) {
-			counts[delim] =
-				_.get(counts, delim, 0) + (row.trim().split(delim).length - 1);
+			const currentValue = counts.get(delim) ?? 0;
+			counts.set(
+				delim,
+				currentValue + (row.trim().split(delim).length - 1)
+			);
 		}
 	}
 
@@ -103,7 +182,7 @@ export function determineColumnDelimiter(
 		a: string,
 		b: string
 	) {
-		return counts[a] > counts[b] ? a : b;
+		return (counts.get(a) ?? 0) > (counts.get(b) ?? 0) ? a : b;
 	});
 	if (bestColumnDelimiter === `\t`) {
 		return `\\t`;
@@ -172,7 +251,7 @@ function determineBestDataTypeForColumn(
 			cell => !/^-*[0-9\.]+$/.test(cell)
 		);
 	}
-/*
+	/*
 	const possibleDateFormats = [moment.ISO_8601, 'MM/DD/YYYY', 'YYYY-MM-DD'];
 	//if the value matches a date format
 	if (data.every(cell => moment(cell, possibleDateFormats, true).isValid())) {
@@ -185,10 +264,17 @@ function determineBestDataTypeForColumn(
 	return column;
 }
 
-function parseInput(input: String, config: Page2DOptions): ParseResult {
+function parseInput(input: String, config: IOptions): ParseResult {
 	//todo: need to fix this `any` - but chances are it means I need a different variable down below
 	let output: any[] = input
 		.split(processDelimiter(config.rowDelimiter))
+		.filter(function(line: string) {
+			if (config.ignoreEmptyLines && line.trim().length === 0) {
+				return false;
+			} else {
+				return true;
+			}
+		})
 		.map(function(line: string): string[] {
 			return line.split(processDelimiter(config.columnDelimiter));
 		});
@@ -220,7 +306,7 @@ function parseInput(input: String, config: Page2DOptions): ParseResult {
 	);
 
 	output = output.map(function(row: string[]) {
-		const rowObj: {} = {};
+		const rowObj: any = {};
 		row.forEach(function(cell: string | null, idx: number) {
 			if (
 				config.convertEmptyString &&
@@ -235,6 +321,20 @@ function parseInput(input: String, config: Page2DOptions): ParseResult {
 			) {
 				cell = null;
 			}
+			if (
+				cell !== null &&
+				typeof cell === 'string' &&
+				config.trimFields
+			) {
+				cell = cell.trim();
+			}
+			if (
+				cell !== null &&
+				typeof cell === 'string' &&
+				config.escapeSingleQuotes
+			) {
+				cell = cell.split(`'`).join(`''`);
+			}
 			rowObj[headers[idx].name] = cell;
 		});
 		return rowObj;
@@ -246,7 +346,7 @@ function parseInput(input: String, config: Page2DOptions): ParseResult {
 
 	//now that we have the real headers, go through them and convert the data if necessary
 	output = output.map(function(row: {}) {
-		return _.mapValues(row, function(value: string | number, key: string) {
+		return Object.entries(row).map(function([key, value]) {
 			const header = headers.find(h => h.name === key);
 			if (header === undefined) {
 				//should never happen but have to handle the possibility
@@ -256,7 +356,7 @@ function parseInput(input: String, config: Page2DOptions): ParseResult {
 				return value;
 			}
 			if (header.type === 'boolean') {
-				if ([true, 1, '1', 'true', 'TRUE'].includes(value)) {
+				if ([true, 1, '1', 'true', 'TRUE'].includes(value as string | number | boolean)) {
 					return true;
 				}
 				return false;
@@ -283,8 +383,8 @@ function toPgInsert(
 	function rowTemplate(row: {}[], columns: ParseResultColumn[]): string {
 		let output: string = `(`;
 
-		output += _.map(row, (value, key: string) => {
-			const col = _.find(columns, { name: key });
+		output += mapObject(row, (value, key: string) => {
+			const col = columns.find(column => column.name = key);
 			if (col === undefined) {
 				//should never happen but have to protect against it
 				return value;
@@ -306,7 +406,6 @@ function toPgInsert(
 				return value;
 			}
 			if (['datetime'].includes(col.type)) {
-
 				//return `'${moment.utc(value).toISOString()}'`;
 				//todo
 				return value;
@@ -335,7 +434,7 @@ CREATE TABLE ${tableName} (
 			.join('\n\t,')}
 );
 
-INSERT INTO ${tableName} ( ${_.map(input.headers, 'name').join(', ')} ) VALUES
+INSERT INTO ${tableName} ( ${input.headers.map(header => header.name).join(', ')} ) VALUES
   ${input.data.map(row => rowTemplate(row, input.headers)).join('\n, ')}
 ;`;
 }
@@ -344,8 +443,8 @@ function toPGValues(input: ParseResult, cteName: string = 'data'): string {
 	function rowTemplate(row: {}[], columns: ParseResultColumn[]): string {
 		let output: string = `(`;
 
-		output += _.map(row, (value, key: string) => {
-			const col = _.find(columns, { name: key });
+		output += mapObject(row, (value, key: string) => {
+			const col = columns.find(column => column.name = key);
 			if (col === undefined) {
 				//should never happen but have to protect against it
 				return value;
@@ -376,7 +475,7 @@ function toPGValues(input: ParseResult, cteName: string = 'data'): string {
 		return output + ')';
 	}
 
-	return `with ${cteName} (${_.map(input.headers, 'name').join(
+	return `with ${cteName} (${input.headers.map(header => header.name).join(
 		','
 	)}) as (VALUES
   ${input.data.map(row => rowTemplate(row, input.headers)).join('\n, ')}
