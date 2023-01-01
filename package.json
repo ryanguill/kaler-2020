@@ -12,7 +12,7 @@
   "license": "ISC",
   "devDependencies": {
     "moment": "^2.27.0",
-    "parcel": "^2.0.0-beta.1",
+    "parcel": "^2.8.2",
     "typescript": "^3.9.6"
   }
 }
